@@ -7,11 +7,29 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
+def _read_secret(name: str, default=None):
+    """Read a secret from env first, then Streamlit Cloud st.secrets.
+
+    Streamlit Community Cloud injects secrets into st.secrets, not os.environ.
+    """
+    val = os.getenv(name)
+    if val:
+        return val
+    try:
+        import streamlit as st
+        if name in st.secrets:
+            return st.secrets[name]
+    except Exception:
+        pass
+    return default
+
+
 class Config:
     """Application configuration"""
 
     # OpenRouter API
-    OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+    OPENROUTER_API_KEY = _read_secret('OPENROUTER_API_KEY')
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
     # Model configurations (PRD Step 1: Gemma 4)
@@ -26,7 +44,7 @@ class Config:
     # Application settings
     APP_NAME = "FridgeChef"
     APP_VERSION = "1.0.0"
-    DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+    DEBUG = str(_read_secret('DEBUG', 'False')).lower() == 'true'
 
     # Paths
     TEMP_FOLDER = "data/temp"
