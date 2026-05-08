@@ -25,7 +25,7 @@ class OpenRouterClient:
     """Client for OpenRouter API (chat completions, vision)."""
 
     def __init__(self):
-        self.api_key = Config.OPENROUTER_API_KEY
+        self.api_key = Config.get_api_key()
         self.base_url = Config.OPENROUTER_BASE_URL
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",

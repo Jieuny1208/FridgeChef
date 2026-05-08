@@ -18,18 +18,43 @@ def _read_secret(name: str, default=None):
         return val
     try:
         import streamlit as st
-        if name in st.secrets:
-            return st.secrets[name]
+        try:
+            if name in st.secrets:
+                return st.secrets[name]
+        except Exception:
+            pass
+        # Streamlit Cloud sometimes nests secrets under a section
+        for section_key in ("default", "secrets", "general"):
+            try:
+                section = st.secrets.get(section_key) if hasattr(st.secrets, "get") else None
+                if section and name in section:
+                    return section[name]
+            except Exception:
+                continue
     except Exception:
         pass
     return default
 
 
+def _diagnose_missing(name: str) -> str:
+    """Build a detailed diagnostic message for a missing secret."""
+    parts = [f"'{name}' 값을 어디에서도 찾지 못했어요."]
+    parts.append(f"- os.environ 에 '{name}': {'있음' if os.getenv(name) else '없음'}")
+    try:
+        import streamlit as st
+        try:
+            keys = list(st.secrets.keys()) if hasattr(st.secrets, "keys") else []
+            parts.append(f"- st.secrets 키 목록: {keys if keys else '비어 있음'}")
+        except Exception as e:
+            parts.append(f"- st.secrets 접근 실패: {type(e).__name__}: {e}")
+    except Exception as e:
+        parts.append(f"- streamlit import 실패: {type(e).__name__}: {e}")
+    return "\n".join(parts)
+
+
 class Config:
     """Application configuration"""
 
-    # OpenRouter API
-    OPENROUTER_API_KEY = _read_secret('OPENROUTER_API_KEY')
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
     # Model configurations (PRD Step 1: Gemma 4)
@@ -58,10 +83,22 @@ class Config:
     MAX_RETRIES = len(RETRY_BACKOFF_SECONDS)
 
     @classmethod
+    def get_api_key(cls):
+        """Read API key fresh from env / st.secrets each time."""
+        return _read_secret('OPENROUTER_API_KEY')
+
+    # Backwards-compat: keep attribute access working but always read fresh.
+    def __class_getitem__(cls, item):  # not used, just placeholder
+        return None
+
+    @classmethod
     def validate(cls):
         """Validate required configuration"""
-        if not cls.OPENROUTER_API_KEY:
-            raise ValueError("OPENROUTER_API_KEY is not set in environment variables")
+        if not cls.get_api_key():
+            raise ValueError(
+                "OPENROUTER_API_KEY is not set in environment variables\n\n"
+                + _diagnose_missing('OPENROUTER_API_KEY')
+            )
 
         # Create folders if they don't exist
         os.makedirs(cls.TEMP_FOLDER, exist_ok=True)
