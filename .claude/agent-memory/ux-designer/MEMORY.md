@@ -1,0 +1,4 @@
+- [Project: FridgeChef](project_fridgechef.md) — 한국어 AI 레시피 앱, Streamlit + 정적 web 두 프론트
+- [Design tokens](design_tokens.md) — web/styles.css의 색·간격·타이포 토큰 (오렌지 #ff6b35 / 청록 #4ecdc4)
+- [Korean UI tone](feedback_korean_tone.md) — "~하세요"/"~해 주세요" 톤, 비난하지 않는 에러
+- [Files in scope](project_files_in_scope.md) — 어떤 파일이 운영 중이고 어떤 파일이 .bak/legacy인지

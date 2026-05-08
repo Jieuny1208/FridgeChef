@@ -1,0 +1,10 @@
+# Step 3 Requirements (includes Step 1, 2)
+streamlit>=1.29.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+Pillow>=10.0.0
+pandas>=2.1.0
+jsonschema>=4.0.0
+pydantic>=2.0.0
+bcrypt>=4.0.0
+filelock>=3.12.0

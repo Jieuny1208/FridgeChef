@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="냉장고 사진 한 장이면 AI가 식재료를 인식하고 맞춤 레시피를 추천해 드려요.">
+    <meta name="theme-color" content="#ff6b35">
+    <title>냉장고를 부탁해 — AI 레시피 추천</title>
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧊</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">본문으로 건너뛰기</a>
+    <div class="container">
+        <!-- Header -->
+        <header class="header" role="banner">
+            <div class="header-top">
+                <div class="header-title-group">
+                    <h1 class="app-title">
+                        <span class="title-icon" aria-hidden="true">🧊</span>
+                        냉장고를 부탁해
+                    </h1>
+                    <p class="app-subtitle">사진 한 장으로 받는 맞춤 레시피</p>
+                </div>
+                <button id="settingsBtn" class="btn-settings" aria-label="API 키 설정 열기" title="API 키 설정">
+                    <span aria-hidden="true">⚙️</span>
+                </button>
+            </div>
+            <!-- 첫 방문자용 3-step 온보딩 -->
+            <ol class="onboarding-steps" aria-label="이용 방법 3단계">
+                <li><span class="onb-num" aria-hidden="true">1</span><span class="onb-text"><b>사진 업로드</b><br><small>냉장고 안을 찍어 주세요</small></span></li>
+                <li><span class="onb-num" aria-hidden="true">2</span><span class="onb-text"><b>재료 분석</b><br><small>AI가 재료를 골라요</small></span></li>
+                <li><span class="onb-num" aria-hidden="true">3</span><span class="onb-text"><b>레시피 추천</b><br><small>맞춤 요리를 받아요</small></span></li>
+            </ol>
+        </header>
+
+        <!-- API Key Settings Modal -->
+        <div id="settingsModal" class="modal hidden" role="dialog" aria-labelledby="settings-title" aria-modal="true">
+            <div class="modal-content settings-modal">
+                <div class="modal-header">
+                    <h3 id="settings-title" class="modal-title"><span aria-hidden="true">⚙️</span> API 키 설정</h3>
+                    <button id="closeSettingsBtn" class="btn-close" aria-label="설정 창 닫기">
+                        <span aria-hidden="true">✕</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-info" role="note">
+                        <p><strong>API 키 설정은 보통 필요하지 않아요.</strong></p>
+                        <p class="settings-help-secondary">
+                            로컬에서 직접 OpenRouter API 키를 사용하고 싶은 경우에만 아래에 입력해 주세요.
+                        </p>
+                    </div>
+                    <div class="form-group">
+                        <label for="apiKeyInput" class="form-label">OpenRouter API 키</label>
+                        <input
+                            type="password"
+                            id="apiKeyInput"
+                            class="form-input"
+                            placeholder="sk-or-v1-..."
+                            aria-describedby="api-key-help"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        <small id="api-key-help" class="form-help">
+                            API 키는 이 브라우저에만 저장되며, 다른 곳으로 전송되지 않아요.
+                        </small>
+                    </div>
+                    <div id="apiKeyStatus" class="api-status hidden" role="status" aria-live="polite"></div>
+                </div>
+                <div class="modal-actions">
+                    <button id="cancelSettingsBtn" class="btn btn-secondary">
+                        취소
+                    </button>
+                    <button id="saveApiKeyBtn" class="btn btn-primary">
+                        <span class="btn-icon" aria-hidden="true">💾</span>
+                        저장하기
+                    </button>
+                </div>
+            </div>
+            <div class="modal-backdrop"></div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content" role="main">
+            <!-- Image Upload Section -->
+            <section class="upload-section" aria-labelledby="upload-section-title">
+                <div class="upload-container">
+                    <div class="upload-header">
+                        <h2 class="section-title" id="upload-section-title">
+                            <span class="section-icon" aria-hidden="true">📸</span>
+                            냉장고 사진 올리기
+                        </h2>
+                        <p class="section-description">사진을 올리거나, 재료를 직접 입력해도 좋아요.</p>
+                    </div>
+
+                    <div class="upload-area" id="uploadArea" role="region" aria-label="사진 업로드 영역">
+                        <input type="file" id="imageInput" accept="image/*" hidden aria-label="냉장고 사진 파일 선택">
+                        <div class="upload-placeholder">
+                            <span class="upload-icon" aria-hidden="true">📷</span>
+                            <p class="upload-text">사진을 끌어다 놓거나, 아래 버튼으로 선택하세요</p>
+                            <button class="btn btn-primary" id="selectImageBtn" type="button">
+                                <span class="btn-icon" aria-hidden="true">📁</span>
+                                사진 선택하기
+                            </button>
+                            <p class="upload-hint">JPG, PNG, WEBP · 최대 10MB</p>
+                            <div class="sample-divider" aria-hidden="true">또는</div>
+                            <p class="sample-text">샘플 이미지로 먼저 체험해 보기</p>
+                            <div class="sample-images">
+                                <button class="sample-image-btn" data-sample="sample2.jpg" type="button" aria-label="샘플 냉장고 이미지로 시작">
+                                    <img src="samples/sample2.jpg" alt="">
+                                    <span class="sample-image-label">샘플로 시작</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="image-preview hidden" id="imagePreview">
+                            <img id="previewImage" alt="업로드한 냉장고 사진 미리보기">
+                            <button class="btn-remove" id="removeImageBtn" type="button" aria-label="사진 제거하고 다시 선택">
+                                <span aria-hidden="true">✕</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 이미지에서 인식된 재료 섹션 -->
+                    <div id="recognizedIngredientsSection" class="recognized-section hidden" aria-live="polite">
+                        <div class="recognized-header">
+                            <h3 class="recognized-title">
+                                <span class="recognized-icon" aria-hidden="true">🔍</span>
+                                인식된 재료
+                            </h3>
+                        </div>
+                        <div id="recognizedIngredientsContent" class="recognized-content">
+                            <!-- 인식된 재료가 여기에 표시됩니다 -->
+                        </div>
+                        <div class="recognized-actions">
+                            <button id="analyzeImageBtn" class="btn btn-primary" type="button">
+                                <span class="btn-icon" aria-hidden="true">🔍</span>
+                                재료 분석하기
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="divider" aria-hidden="true">
+                        <span>또는</span>
+                    </div>
+
+                    <div class="ingredients-input">
+                        <label for="ingredientsText" class="input-label">
+                            <span class="label-icon" aria-hidden="true">🥬</span>
+                            재료를 직접 입력하기
+                        </label>
+                        <textarea
+                            id="ingredientsText"
+                            class="ingredients-textarea"
+                            placeholder="예: 계란, 우유, 토마토, 양파, 치즈"
+                            rows="3"
+                            aria-describedby="ingredients-help"
+                        ></textarea>
+                        <small id="ingredients-help" class="form-help">
+                            재료는 쉼표(,)로 구분해 주세요. 사진과 함께 입력하면 더 정확한 추천을 받을 수 있어요.
+                        </small>
+                    </div>
+
+                    <button id="generateRecipeBtn" class="btn btn-generate" type="button" disabled aria-describedby="generate-help">
+                        <span class="btn-icon" aria-hidden="true">🍳</span>
+                        레시피 추천받기
+                    </button>
+                    <small id="generate-help" class="form-help generate-help">
+                        사진을 올리거나 재료를 입력하면 활성화돼요.
+                    </small>
+                </div>
+            </section>
+
+            <!-- Loading Section -->
+            <div id="loadingSection" class="loading-section hidden" role="status" aria-live="polite">
+                <div class="loading-spinner" aria-hidden="true"></div>
+                <p class="loading-text">맛있는 레시피를 준비하고 있어요…</p>
+                <p class="loading-subtext">보통 10~20초 정도 걸려요. 잠시만 기다려 주세요.</p>
+            </div>
+
+            <!-- Recipe Result Section -->
+            <section id="recipeResult" class="recipe-result hidden" aria-labelledby="result-title" tabindex="-1">
+                <div class="result-container">
+                    <h2 class="result-title" id="result-title">
+                        <span class="result-icon" aria-hidden="true">👨‍🍳</span>
+                        추천 레시피
+                    </h2>
+
+                    <div id="recipeContent" class="recipe-content">
+                        <!-- Recipe will be inserted here -->
+                    </div>
+
+                    <div class="result-actions">
+                        <button id="newSearchBtn" class="btn btn-primary" type="button">
+                            <span class="btn-icon" aria-hidden="true">🔄</span>
+                            다른 재료로 다시 시도하기
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-text">맛있는 요리로 행복한 하루 되세요! 🍽️</p>
+            <div style="margin-top: 20px; padding: 20px; background: rgba(255, 255, 255, 0.95); border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.3);">
+                <p style="margin: 0 0 12px 0; text-align: center; font-size: 0.9em; color: #333; line-height: 1.6;">
+                    💡 <strong>6장</strong>에서 만든 AI 레시피 추천 앱과<br>
+                    <strong>8장의 Vercel 배포편</strong>을 응용해 제작하였습니다.
+                </p>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="https://github.com/taehojo/vibecoding" target="_blank" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                        📚 GitHub 저장소로 돌아가기
+                    </a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Success Toast -->
+    <div id="successToast" class="toast hidden" role="status" aria-live="polite">
+        <span class="toast-icon" aria-hidden="true">✅</span>
+        <span class="toast-message"></span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="backend.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
