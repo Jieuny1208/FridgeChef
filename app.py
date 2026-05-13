@@ -3,7 +3,6 @@
 PRDs: PRD_step1.md, PRD_step2.md, PRD_step3.md
 """
 import json
-import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -730,10 +729,9 @@ def render_recipe_card(
         if savable:
             # 저장됨 상태가 비활성 회색이 아니라 명확한 성공 컬러로 보이도록 라벨 변경
             label = "✅ 내 레시피에 저장됨" if already else "⭐ 내 레시피에 저장"
-            # M-9: rid may collide if two recipes happen to share the same
-            # (title, ingredients, servings, minutes, difficulty) hash within
-            # one render — adding a uuid suffix guarantees a unique widget key.
-            btn_key = f"save_{rid}_{idx}_{uuid.uuid4().hex[:6]}"
+            # 위젯 키는 rerun 사이에 안정적이어야 클릭이 감지됨. idx로 위치 유일성
+            # 보장. rid가 비어 있어도 (rid, idx) 조합으로 한 화면 내에서 충돌 없음.
+            btn_key = f"save_{rid}_{idx}"
             if b4.button(
                 label, key=btn_key, disabled=already,
                 use_container_width=True,

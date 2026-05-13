@@ -57,9 +57,11 @@ class Config:
 
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-    # Model configurations (PRD Step 1: Gemma 4)
+    # Model configurations
+    # 이미지 인식은 vision 가능 모델 필요 (Gemma 4 multimodal 유지).
+    # 레시피 생성은 텍스트 전용이라 rate limit이 더 넉넉한 owl-alpha 사용.
     IMAGE_RECOGNITION_MODEL = "google/gemma-4-26b-a4b-it:free"
-    RECIPE_GENERATION_MODEL = "google/gemma-4-31b-it:free"
+    RECIPE_GENERATION_MODEL = "openrouter/owl-alpha"
 
     # Image settings
     MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB

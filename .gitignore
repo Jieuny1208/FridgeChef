@@ -65,6 +65,10 @@ data/users.json
 data/profiles.json
 data/saved_recipes.json
 data/.lock
+# _storage.py가 atomic write 시 자동 생성하는 백업/임시 파일
+data/*.bak
+data/*.corrupt-*
+data/*.tmp
 
 # Streamlit secrets (local only)
 .streamlit/secrets.toml
